@@ -4,16 +4,13 @@ Get SAR images from Earth Engine to train network for three sites
 """
 import ee
 import geemap
+import numpy
+import matplotlib.pyplot as plt
 
 # Initialize Earth Engine Api
 # More information at developers.google.com/earth-engine/guides/python_install-conda#windows
 ee.Initialize(project='ee-nelson-remote-sensing')
 
-# Mask image edges
-def mask_edge(image):
-    edge = image.lt(-30.0)
-    masked_image = image.mask().And(edge.Not())
-    return image.updateMask(masked_image)
 
 def to_db(image: ee.Image):
     return image.log10().multiply(10)
@@ -128,7 +125,7 @@ def speckle_reduction(image: ee.Image):
 
 def export_numpy(image: ee.Image, aoi: ee.Geometry.BBox):
     # Convert image to numpy
-    sar_np = geemap.ee_to_numpy(image, region=aoi)
+    sar_np = geemap.ee_to_numpy(image, region=aoi, scale=10)
     # Scale image values to 0-255 to make it easier for working with torch
     transformed_np = ((sar_np - sar_np.min()) * (1/(sar_np.max() - sar_np.min()) * 255)).astype('uint8')
     return transformed_np
@@ -144,7 +141,6 @@ def filter_sentinel1(bb: list, start: str, end: str):
         .filter(ee.Filter.eq('resolution_meters', 10))
         .filter(ee.Filter.date(start, end))
         .select('VV')
-        .map(mask_edge)
         .mean()
     )
 
@@ -155,12 +151,18 @@ def filter_sentinel1(bb: list, start: str, end: str):
         .filter(ee.Filter.eq('resolution_meters', 10))
         .filter(ee.Filter.date(start, end))
         .select('VH')
-        .map(mask_edge)
         .mean()
     )
 
-    img_vv = filter_vv.clip(geom_box).map(un_log).map(speckle_reduction).map(to_db)
-    img_vh = filter_vh.clip(geom_box).map(un_log).map(speckle_reduction).map(to_db)
+    img_vv = filter_vv.clip(geom_box)
+    #img_vv_un_log = un_log(img_vv)
+    #img_vv_sp_reduction = speckle_reduction(img_vv_un_log)
+    #img_vv_to_db = to_db(img_vv_sp_reduction).rename('VV')
+
+    img_vh = filter_vh.clip(geom_box)
+    #img_vh_un_log = un_log(img_vh)
+    #img_vh_sp_reduction = speckle_reduction(img_vh_un_log)
+    #img_vh_to_db = to_db(img_vh_sp_reduction).rename('VH')
 
     # Create squared multiplication (VH2*VV2) SAR index
     # Based on https://doi.org/10.1016/j.jag.2022.103002
@@ -174,3 +176,11 @@ def filter_sentinel1(bb: list, start: str, end: str):
 
     return export_numpy(image=sq_mul_sar, aoi=geom_box)
 
+def visualization(image):
+    plt.imshow(image, cmap='gray', vmin=0, vmax=255, interpolation='nearest')
+    plt.show()
+
+if __name__ == '__main__':
+    # Test this script
+    visualization(filter_sentinel1(bb=[-122.49192573971985, 49.02676423765457, -122.32937691159485, 49.245995407997384],
+                                   start='2021-11-16', end='2021-11-17'))
