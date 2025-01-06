@@ -174,7 +174,33 @@ def filter_sentinel1(bb: list, start: str, end: str):
         }
     )
 
-    return export_numpy(image=sq_mul_sar, aoi=geom_box)
+    # Set empty Lists
+    labels = []
+    chips = []
+
+    # Load in labels
+    label = ee.Image("users/danielnelsonca/Research/SARMask")
+    # Create grid of 224 chips
+    grid = geemap.create_grid(label, 224)
+
+    # Split the labels into 224 chips
+    for cell in range(grid.size().getInfo()):
+        gd = grid.select(cell)
+        cp = label.clip(gd)
+        # Export labels into list of NumPy
+        ex = export_numpy(image=cp, aoi=gd)
+        labels.append(ex)
+
+    # Split the chips into 224 chips
+    for cell in range(grid.size().getInfo()):
+        gd = grid.select(cell)
+        cp = sq_mul_sar.clip(gd)
+        # Export chips into list of NumPy
+        ex = export_numpy(image=cp, aoi=gd)
+        chips.append(ex)
+
+    # Return List of Lists
+    return labels, chips
 
 def visualization(image):
     plt.imshow(image, cmap='gray', vmin=0, vmax=255, interpolation='nearest')
@@ -182,5 +208,7 @@ def visualization(image):
 
 if __name__ == '__main__':
     # Test this script
-    visualization(filter_sentinel1(bb=[-122.49192573971985, 49.02676423765457, -122.32937691159485, 49.245995407997384],
-                                   start='2021-11-16', end='2021-11-17'))
+    ts = filter_sentinel1(bb=[-122.49192573971985, 49.02676423765457, -122.32937691159485, 49.245995407997384],
+                          start='2021-11-01', end='2021-11-05')
+    print(ts[0][0])
+    visualization(ts[0][0])
