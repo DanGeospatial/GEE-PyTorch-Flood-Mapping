@@ -6,6 +6,7 @@ import ee
 import geemap
 import numpy
 import matplotlib.pyplot as plt
+import SAR_Processing.wrapper as wp
 
 # Initialize Earth Engine Api
 # More information at developers.google.com/earth-engine/guides/python_install-conda#windows
@@ -23,35 +24,58 @@ def filter_sentinel1(bb: list, start: str, end: str):
 
     geom_box = ee.Geometry.BBox(west=bb[0], south=bb[1], east=bb[2], north=bb[3])
 
-    filter_vv = (
-        ee.ImageCollection('COPERNICUS/S1_GRD')
-        .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
-        .filter(ee.Filter.eq('instrumentMode', 'IW'))
-        .filter(ee.Filter.eq('resolution_meters', 10))
-        .filter(ee.Filter.date(start, end))
-        .select('VV')
-        .mean()
-    )
+    parameter_vv = {'START_DATE': start,
+                 'STOP_DATE': end,
+                 'POLARIZATION': 'VV',
+                 'ORBIT': 'DESCENDING',
+                 'ROI': geom_box,
+                 'APPLY_BORDER_NOISE_CORRECTION': False,
+                 'APPLY_SPECKLE_FILTERING': True,
+                 'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
+                 'SPECKLE_FILTER': 'GAMMA MAP',
+                 'SPECKLE_FILTER_KERNEL_SIZE': 9,
+                 'SPECKLE_FILTER_NR_OF_IMAGES': 10,
+                 'APPLY_TERRAIN_FLATTENING': True,
+                 'DEM': ee.Image('USGS/SRTMGL1_003'),
+                 'TERRAIN_FLATTENING_MODEL': 'VOLUME',
+                 'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
+                 'FORMAT': 'DB',
+                 'CLIP_TO_ROI': False,
+                 'SAVE_ASSET': False,
+                 'ASSET_ID': "users/XXX"
+                 }
 
-    filter_vh = (
-        ee.ImageCollection('COPERNICUS/S1_GRD')
-        .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
-        .filter(ee.Filter.eq('instrumentMode', 'IW'))
-        .filter(ee.Filter.eq('resolution_meters', 10))
-        .filter(ee.Filter.date(start, end))
-        .select('VH')
-        .mean()
-    )
+    parameter_vh = {'START_DATE': start,
+                 'STOP_DATE': end,
+                 'POLARIZATION': 'VH',
+                 'ORBIT': 'DESCENDING',
+                 'ROI': geom_box,
+                 'APPLY_BORDER_NOISE_CORRECTION': False,
+                 'APPLY_SPECKLE_FILTERING': True,
+                 'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
+                 'SPECKLE_FILTER': 'GAMMA MAP',
+                 'SPECKLE_FILTER_KERNEL_SIZE': 9,
+                 'SPECKLE_FILTER_NR_OF_IMAGES': 10,
+                 'APPLY_TERRAIN_FLATTENING': True,
+                 'DEM': ee.Image('USGS/SRTMGL1_003'),
+                 'TERRAIN_FLATTENING_MODEL': 'VOLUME',
+                 'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
+                 'FORMAT': 'DB',
+                 'CLIP_TO_ROI': False,
+                 'SAVE_ASSET': False,
+                 'ASSET_ID': "users/XXX"
+                 }
 
-    img_vv = filter_vv.clip(geom_box)
-    #img_vv_un_log = un_log(img_vv)
-    #img_vv_sp_reduction = speckle_reduction(img_vv_un_log)
-    #img_vv_to_db = to_db(img_vv_sp_reduction).rename('VV')
+    filter_vv = wp.s1_preproc(parameter_vv)
+    filter_vh = wp.s1_preproc(parameter_vh)
 
-    img_vh = filter_vh.clip(geom_box)
-    #img_vh_un_log = un_log(img_vh)
-    #img_vh_sp_reduction = speckle_reduction(img_vh_un_log)
-    #img_vh_to_db = to_db(img_vh_sp_reduction).rename('VH')
+    # Load in labels
+    label = ee.Image("users/danielnelsonca/Research/SARMask")
+    geomimg = label.geometry()
+
+    # Mean then Clip to mask geometry
+    img_vv = filter_vv.mean().clip(geomimg)
+    img_vh = filter_vh.mean().clip(geomimg)
 
     # Create squared multiplication (VH2*VV2) SAR index
     # Based on https://doi.org/10.1016/j.jag.2022.103002
@@ -66,10 +90,7 @@ def filter_sentinel1(bb: list, start: str, end: str):
     # Set empty Lists
     labels = []
     chips = []
-    # Make sure to clip these both to same extent first
 
-    # Load in labels
-    label = ee.Image("users/danielnelsonca/Research/SARMask")
     # Create grid of 224 chips
     grid = geemap.create_grid(label, 224)
 
