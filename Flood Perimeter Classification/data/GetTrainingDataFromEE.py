@@ -8,6 +8,7 @@ import numpy
 import matplotlib.pyplot as plt
 import SAR_Processing.wrapper as wp
 
+
 # Initialize Earth Engine Api
 # More information at developers.google.com/earth-engine/guides/python_install-conda#windows
 ee.Initialize(project='ee-nelson-remote-sensing')
@@ -20,15 +21,16 @@ def export_numpy(image: ee.Image, aoi: ee.Geometry.BBox):
     transformed_np = ((sar_np - sar_np.min()) * (1/(sar_np.max() - sar_np.min()) * 255)).astype('uint8')
     return transformed_np
 
-def filter_sentinel1(bb: list, start: str, end: str):
+def filter_sentinel1(mask: ee.Image, start: str, end: str):
 
-    geom_box = ee.Geometry.BBox(west=bb[0], south=bb[1], east=bb[2], north=bb[3])
+    # Retrieve SAR data under mask
+    geomimg = mask.geometry()
 
     parameter_vv = {'START_DATE': start,
                  'STOP_DATE': end,
                  'POLARIZATION': 'VV',
                  'ORBIT': 'DESCENDING',
-                 'ROI': geom_box,
+                 'ROI': geomimg,
                  'APPLY_BORDER_NOISE_CORRECTION': False,
                  'APPLY_SPECKLE_FILTERING': True,
                  'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
@@ -49,7 +51,7 @@ def filter_sentinel1(bb: list, start: str, end: str):
                  'STOP_DATE': end,
                  'POLARIZATION': 'VH',
                  'ORBIT': 'DESCENDING',
-                 'ROI': geom_box,
+                 'ROI': geomimg,
                  'APPLY_BORDER_NOISE_CORRECTION': False,
                  'APPLY_SPECKLE_FILTERING': True,
                  'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
@@ -68,10 +70,6 @@ def filter_sentinel1(bb: list, start: str, end: str):
 
     filter_vv = wp.s1_preproc(parameter_vv)
     filter_vh = wp.s1_preproc(parameter_vh)
-
-    # Load in labels
-    label = ee.Image("users/danielnelsonca/Research/SARMask")
-    geomimg = label.geometry()
 
     # Mean then Clip to mask geometry
     img_vv = filter_vv.mean().clip(geomimg)
@@ -92,12 +90,12 @@ def filter_sentinel1(bb: list, start: str, end: str):
     chips = []
 
     # Create grid of 224 chips
-    grid = geemap.create_grid(label, 224)
+    grid = geemap.create_grid(mask, 224)
 
     # Split the labels into 224 chips
     for cell in range(grid.size().getInfo()):
         gd = grid.select(cell)
-        cp = label.clip(gd)
+        cp = mask.clip(gd)
         # Export labels into list of NumPy
         ex = export_numpy(image=cp, aoi=gd)
         labels.append(ex)
@@ -119,7 +117,12 @@ def visualization(image):
 
 # Test this script
 if __name__ == '__main__':
-    ts = filter_sentinel1(bb=[-122.49192573971985, 49.02676423765457, -122.32937691159485, 49.245995407997384],
-                          start='2021-11-01', end='2021-11-05')
+
+    # Load in labels
+    label = ee.Image("projects/ee-nelson-remote-sensing/assets/SARMask")
+
+    ts = filter_sentinel1(mask=label,
+                          start='2021-11-17', end='2021-11-22')
     print(ts[0][0])
     visualization(ts[0][0])
+    visualization(ts[1][0])
