@@ -4,12 +4,13 @@ Date: 2021-04-01
 Authors: Mullissa A., Vollrath A., Braun, C., Slagter B., Balling J., Gou Y., Gorelick N.,  Reiche J.
 Description: A wrapper function to derive the Sentinel-1 ARD
 """
+from . import border_noise_correction as bnc
+from . import speckle_filter as sf
+from . import terrain_flattening as trf
+from . import helper
 
 import ee
-import border_noise_correction as bnc
-import speckle_filter as sf
-import terrain_flattening as trf
-import helper
+
 
 ee.Initialize(project='ee-nelson-remote-sensing')
 
