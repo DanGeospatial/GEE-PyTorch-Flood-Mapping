@@ -30,67 +30,6 @@ def getRequests(image: ee.Image, params: dict, region: ee.Geometry):
 
     return points.aggregate_array(".geo").getInfo()
 
-@retry(tries=10, delay=1, backoff=2)
-def getResult(index, point, image: ee.Image, params: dict, mask: ee.Image):
-    point = ee.Geometry.Point(point["coordinates"])
-    region = point.buffer(params["buffer"]).bounds()
-
-    if params["format"] in ["png", "jpg"]:
-        url = image.getThumbURL(
-            {
-                "region": region,
-                "dimensions": params["dimensions"],
-                "format": params["format"],
-            }
-        )
-        url_m = mask.getThumbURL(
-            {
-                "region": region,
-                "dimensions": params["dimensions"],
-                "format": params["format"],
-            }
-        )
-    else:
-        url = image.getDownloadURL(
-             {
-                "region": region,
-                "dimensions": params["dimensions"],
-                "format": params["format"],
-             }
-         )
-        url_m = mask.getDownloadURL(
-            {
-                "region": region,
-                "dimensions": params["dimensions"],
-                "format": params["format"],
-            }
-        )
-
-    if params["format"] == "GEO_TIFF":
-        ext = "tif"
-    else:
-        ext = params["format"]
-
-    r_img = requests.get(url, stream=True)
-    if r_img.status_code != 200:
-        r_img.raise_for_status()
-
-    r_m = requests.get(url_m, stream=True)
-    if r_m.status_code != 200:
-        r_m.raise_for_status()
-
-    out_dir = os.path.abspath(params["out_dir"])
-    basename = str(index).zfill(len(str(params["count"])))
-    filename_images = f"{out_dir}/images/{params['prefix']}{basename}.{ext}"
-    filename_masks = f"{out_dir}/masks/{params['prefix']}{basename}.{ext}"
-    with open(filename_images, "wb") as out_file:
-        shutil.copyfileobj(r_img.raw, out_file)
-        print("Done: ", basename)
-
-    with open(filename_masks, "wb") as out_file:
-        shutil.copyfileobj(r_m.raw, out_file)
-        print("Done: ", basename)
-
 
 def filter_sentinel1(mask: ee.Image, start: str, end: str):
 
@@ -157,7 +96,7 @@ def filter_sentinel1(mask: ee.Image, start: str, end: str):
     )
 
     params = {
-        "count": 100,  # How many image chips to export
+        "count": 3,  # How many image chips to export
         "buffer": 127,  # The buffer distance (m) around each point
         "scale": 100,  # The scale to do stratified sampling
         "seed": 32,  # A randomization seed to use for subsampling.
@@ -168,10 +107,72 @@ def filter_sentinel1(mask: ee.Image, start: str, end: str):
         "out_dir": "/mnt/d/SAR_testing",  # The output directory. Default to the current working directly
     }
 
+    @retry(tries=10, delay=1, backoff=2)
+    def getResult(index, point):
+        point = ee.Geometry.Point(point["coordinates"])
+        region = point.buffer(params["buffer"]).bounds()
+
+        if params["format"] in ["png", "jpg"]:
+            url = sq_mul_sar.getThumbURL(
+                {
+                    "region": region,
+                    "dimensions": params["dimensions"],
+                    "format": params["format"],
+                }
+            )
+            url_m = mask.getThumbURL(
+                {
+                    "region": region,
+                    "dimensions": params["dimensions"],
+                    "format": params["format"],
+                }
+            )
+        else:
+            url = sq_mul_sar.getDownloadURL(
+                {
+                    "region": region,
+                    "dimensions": params["dimensions"],
+                    "format": params["format"],
+                }
+            )
+            url_m = mask.getDownloadURL(
+                {
+                    "region": region,
+                    "dimensions": params["dimensions"],
+                    "format": params["format"],
+                }
+            )
+
+        if params["format"] == "GEO_TIFF":
+            ext = "tif"
+        else:
+            ext = params["format"]
+
+        r_img = requests.get(url, stream=True)
+        if r_img.status_code != 200:
+            r_img.raise_for_status()
+
+        r_m = requests.get(url_m, stream=True)
+        if r_m.status_code != 200:
+            r_m.raise_for_status()
+
+        out_dir = os.path.abspath(params["out_dir"])
+        basename = str(index).zfill(len(str(params["count"])))
+        filename_images = f"{out_dir}/images/{params['prefix']}{basename}.{ext}"
+        filename_masks = f"{out_dir}/masks/{params['prefix']}{basename}.{ext}"
+        with open(filename_images, "wb") as out_file:
+            shutil.copyfileobj(r_img.raw, out_file)
+            print("Done: ", basename)
+
+        with open(filename_masks, "wb") as out_file:
+            shutil.copyfileobj(r_m.raw, out_file)
+            print("Done: ", basename)
+
+
     items = getRequests(image=sq_mul_sar, params=params, region=geomimg)
 
     pool = multiprocessing.Pool(params["processes"])
-    pool.starmap(getResult(image=sq_mul_sar, params=params, mask=mask), enumerate(items))
+    pool.starmap(getResult, enumerate(items))
 
     pool.close()
 
@@ -183,4 +184,4 @@ if __name__ == '__main__':
     label = ee.Image("projects/ee-nelson-remote-sensing/assets/SARMask")
 
     filter_sentinel1(mask=label,
-                          start='2021-11-17', end='2021-11-22')
+                          start='2021-11-16', end='2021-11-22')
