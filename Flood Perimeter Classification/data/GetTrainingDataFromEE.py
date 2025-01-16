@@ -164,7 +164,7 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
     img = sq_mul_sar
 
     params = {
-        "count": 1000,  # How many image chips to export
+        "count": 3000,  # How many image chips to export
         "buffer": 227,  # The buffer distance (m) around each point
         "scale": 100,  # The scale to do stratified sampling
         "seed": 32,  # A randomization seed to use for subsampling.
