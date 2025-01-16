@@ -1,6 +1,20 @@
-from geemap.conversion import *
+import numpy as np
+import pandas as pd
+import os
 
-in_js = '/mnt/d/input.js'
-out_py = '/mnt/d/output.py'
+img_path = "/mnt/d/SAR_testing/images/"
 
-js_to_python(in_file=in_js, out_file=out_py)
+def create_df(path):
+    file_name = []
+    for dirname, _, filenames in os.walk(path): # given a directory iterates over the files
+        for filename in filenames:
+            f = filename.split('.')[0]
+            f = f.replace('tile_', '')
+            file_name.append(f)
+
+    return pd.DataFrame({'id': file_name}, index = np.arange(0, len(file_name))).sort_values('id').reset_index(drop=True)
+
+
+x = create_df(img_path)['id'].values
+
+print(x)

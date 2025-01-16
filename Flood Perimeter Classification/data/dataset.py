@@ -1,7 +1,7 @@
 import numpy as np
 import albumentations as ab
 from torch.utils.data import Dataset
-
+from PIL import Image
 
 class NPYDataset(Dataset):
     def __init__(self, img_path, mask_path, X, transform=None):
@@ -16,8 +16,8 @@ class NPYDataset(Dataset):
 
     def __getitem__(self, index):
 
-        image = np.array(np.load(file=(self.img_path + self.X[index] + '.NPY').astype(dtype=np.float64), allow_pickle=True))
-        mask = np.array(np.load(file=(self.mask_path + self.X[index] + '.NPY').astype('uint8'), allow_pickle=True))
+        image = np.array(Image.open(self.img_path + 'tile_' + self.X[index] + '.png'))
+        mask = np.array(Image.open(self.mask_path + 'tile_' + self.X[index] + '.png'))
 
         # Scale image values to 0-255 to make it easier for working with albumentations
         image = ((image - image.min()) * (1/(image.max() - image.min()) * 255)).astype('uint8')
@@ -28,6 +28,7 @@ class NPYDataset(Dataset):
             mask = aug['mask']
 
         normalized = ab.Normalize()(image=image, mask=np.expand_dims(mask, 0))
+        # normalized = ab.Normalize()(image=np.expand_dims(image, 2), mask=np.expand_dims(mask, 0)) for greyscale
 
         assert mask.max() <= 1.0 and mask.min() >= 0
 

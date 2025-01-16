@@ -2,14 +2,14 @@ import segmentation_models_pytorch as smp
 import torch
 import torch.nn as nn
 
-from torch import device, cuda, optim, autocast
+from torch import device, cuda, optim, autocast, save
 from data.loader import train_dl, val_dl, test_dl
 
 
 def train_model(model, device_hw, epoch_num, lr):
 
     # Set the optimizer and learning rate scheduler
-    optimizer = optim.SGD(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
 
     loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE)
@@ -32,7 +32,7 @@ def train_model(model, device_hw, epoch_num, lr):
                 loss = loss_fn(mask_prediction, masks)
 
             gradient_scaler.scale(loss).backward()
-            nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            nn.utils.clip_grad_norm_(model.parameters())
             gradient_scaler.step(optimizer)
             gradient_scaler.update()
 
@@ -67,8 +67,12 @@ def train_model(model, device_hw, epoch_num, lr):
 
         scheduler.step(test_loss)
 
-        print(f"\nTrain loss: {epoch_loss:.5f} | Test loss: {test_loss:.5f}, Test acc: {IoU:.2f}%\n")
+        print(f"\nTrain loss: {epoch_loss:.5f} | Test loss: {test_loss:.5f}, Test acc: {IoU:.2f}\n")
 
+    print("Training Complete!")
+    # state_dict = model.state_dict()
+    # save(state_dict, "/mnt/d/SAR_Water_v1.pth")
+    # print("Model Saved")
 
 if __name__ == '__main__':
     print("Using PyTorch version: ", torch.__version__)
@@ -83,7 +87,7 @@ if __name__ == '__main__':
     learning_rate = 1e-8
 
 
-    model = smp.Unet(encoder_name="resnet18", in_channels=1, classes=classes, activation="softmax").to(device)
+    model = smp.Unet(encoder_name="resnext50_32x4d", in_channels=3, classes=classes, activation="softmax2d", encoder_weights="imagenet").to(device)
 
     try:
         train_model(

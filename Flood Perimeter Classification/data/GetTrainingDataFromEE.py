@@ -157,11 +157,14 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
             'VV': sar_cat.select(['VV'])
         }
     )
+    sq_mul_sar.rename('VHVV')
+
+    img_cat = ee.Image.cat([img_vv, img_vh, sq_mul_sar])
 
     # Doing this is not very good
     global params
     global img
-    img = sq_mul_sar
+    img = img_cat
 
     params = {
         "count": 3000,  # How many image chips to export
@@ -169,13 +172,13 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
         "scale": 100,  # The scale to do stratified sampling
         "seed": 32,  # A randomization seed to use for subsampling.
         "dimensions": "512x512",  # The dimension of each image chip
-        "format": "NPY",  # The output image format, can be png, jpg, ZIPPED_GEO_TIFF, GEO_TIFF, NPY
+        "format": "png",  # The output image format, can be png, jpg, ZIPPED_GEO_TIFF, GEO_TIFF, NPY
         "prefix": "tile_",  # The filename prefix
         "processes": 20,  # How many processes to used for parallel processing
-        "out_dir": "/mnt/d/SAR_testing",  # The output directory. Default to the current working directly
+        "out_dir": "/mnt/d/SAR_Cat",  # The output directory. Default to the current working directly
     }
 
-    items = getRequests(image=sq_mul_sar, params=params, region=geomimg)
+    items = getRequests(image=img_cat, params=params, region=geomimg)
 
     pool = multiprocessing.Pool(params["processes"])
     pool.starmap(getResult, enumerate(items))
