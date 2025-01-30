@@ -16,11 +16,14 @@ class NPYDataset(Dataset):
 
     def __getitem__(self, index):
 
-        image = np.array(Image.open(self.img_path + 'tile_' + self.X[index] + '.png'))
-        mask = np.array(Image.open(self.mask_path + 'tile_' + self.X[index] + '.png'))
+        image = np.array(Image.open(self.img_path + 'tile_' + self.X[index] + '.png').convert("RGB"))
 
+        msk = Image.open(self.mask_path + 'tile_' + self.X[index] + '.png').convert("RGB")
+        red, green, blue = msk.split()
+        mask = np.array(green)
+        mask[mask > 254] = 1
         # Scale image values to 0-255 to make it easier for working with albumentations
-        image = ((image - image.min()) * (1/(image.max() - image.min()) * 255)).astype('uint8')
+        # image = ((image - image.min()) * (1/(image.max() - image.min()) * 255)).astype('uint8')
 
         if self.transform is not None:
             aug = self.transform(image=image, mask=mask)

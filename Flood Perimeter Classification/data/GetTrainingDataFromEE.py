@@ -19,8 +19,8 @@ ee.Initialize(project='ee-nelson-remote-sensing', url="https://earthengine-highv
 
 
 def getRequests(image: ee.Image, params: dict, region: ee.Geometry):
-    img = ee.Image(1).rename("Class").addBands(image)
-    points = img.stratifiedSample(
+    imger = ee.Image(1).rename("Class").addBands(image)
+    points = imger.stratifiedSample(
         numPoints=params["count"],
         region=region,
         scale=params["scale"],
@@ -38,6 +38,7 @@ def getResult(index, point):
     if params["format"] in ["png", "jpg"]:
         url = img.getThumbURL(
             {
+                'min': -30, 'max': 1,
                 "region": region,
                 "dimensions": params["dimensions"],
                 "format": params["format"],
@@ -45,6 +46,8 @@ def getResult(index, point):
         )
         url_m = mask.getThumbURL(
             {
+                'min': 0, 'max': 1,
+                'bands': ["b1"],
                 "region": region,
                 "dimensions": params["dimensions"],
                 "format": params["format"],
@@ -141,6 +144,7 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
                  'ASSET_ID': "users/XXX"
                  }
 
+
     filter_vv = wp.s1_preproc(parameter_vv)
     filter_vh = wp.s1_preproc(parameter_vh)
 
@@ -157,9 +161,14 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
             'VV': sar_cat.select(['VV'])
         }
     )
-    sq_mul_sar.rename('VHVV')
+    sq_avg = sar_cat.expression(
+        '(VH + VV) / 2', {
+            'VH': sar_cat.select(['VH']),
+            'VV': sar_cat.select(['VV'])
+        }
+    )
 
-    img_cat = ee.Image.cat([img_vv, img_vh, sq_mul_sar])
+    img_cat = ee.Image.cat([sar_cat.select(['VV']), sar_cat.select(['VH']), sq_avg.select(['VH'])])
 
     # Doing this is not very good
     global params
@@ -167,7 +176,7 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
     img = img_cat
 
     params = {
-        "count": 3000,  # How many image chips to export
+        "count": 500,  # How many image chips to export
         "buffer": 227,  # The buffer distance (m) around each point
         "scale": 100,  # The scale to do stratified sampling
         "seed": 32,  # A randomization seed to use for subsampling.
@@ -178,7 +187,7 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
         "out_dir": "/mnt/d/SAR_Cat",  # The output directory. Default to the current working directly
     }
 
-    items = getRequests(image=img_cat, params=params, region=geomimg)
+    items = getRequests(image=mask, params=params, region=geomimg)
 
     pool = multiprocessing.Pool(params["processes"])
     pool.starmap(getResult, enumerate(items))

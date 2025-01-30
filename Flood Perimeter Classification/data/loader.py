@@ -50,7 +50,7 @@ valid_dataset = NPYDataset(img_path, mask_path, x_val)
 test_dataset = NPYDataset(img_path, mask_path, x_test)
 
 # load images in batch size dependent on VRAM
-batch_size = 6
+batch_size = 3
 
 # Make sure to shuffle train but NOT valid or test
 train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **loader_args)
