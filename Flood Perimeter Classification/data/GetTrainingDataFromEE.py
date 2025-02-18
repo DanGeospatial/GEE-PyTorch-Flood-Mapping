@@ -176,14 +176,14 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
     img = img_cat
 
     params = {
-        "count": 500,  # How many image chips to export
+        "count": 3000,  # How many image chips to export
         "buffer": 227,  # The buffer distance (m) around each point
         "scale": 100,  # The scale to do stratified sampling
         "seed": 32,  # A randomization seed to use for subsampling.
-        "dimensions": "512x512",  # The dimension of each image chip
+        "dimensions": "1024x1024",  # The dimension of each image chip
         "format": "png",  # The output image format, can be png, jpg, ZIPPED_GEO_TIFF, GEO_TIFF, NPY
         "prefix": "tile_",  # The filename prefix
-        "processes": 20,  # How many processes to used for parallel processing
+        "processes": 5,  # How many processes to used for parallel processing
         "out_dir": "/mnt/d/SAR_Cat",  # The output directory. Default to the current working directly
     }
 
@@ -199,7 +199,7 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
 if __name__ == '__main__':
 
     # Load in labels
-    label = ee.Image("projects/ee-nelson-remote-sensing/assets/SARMask")
+    label = ee.Image("projects/ee-nelson-remote-sensing/assets/BC_Water")
 
     filter_sentinel1(lbl=label,
-                          start='2021-11-16', end='2021-11-22')
+                          start='2020-07-01', end='2020-08-25')
