@@ -81,8 +81,12 @@ if __name__ == '__main__':
     epochs = 10
     classes = 1
     learning_rate = 1e-5
+    aux_pm = {'dropout': 0.1}
 
-    model = smp.Linknet(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="advprop").to(device)
+    # 75-76 with LinkNet
+    #TODO I think large only water tiles are the problem & weird band information
+    model = smp.UnetPlusPlus(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="advprop",
+                             aux_params=aux_pm).to(device)
 
     try:
         train_model(
