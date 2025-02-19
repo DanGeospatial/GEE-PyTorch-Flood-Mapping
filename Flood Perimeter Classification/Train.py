@@ -68,8 +68,8 @@ def train_model(model, device_hw, epoch_num, lr):
         print(f"\nTrain loss: {epoch_loss:.5f} | Test loss: {test_loss:.5f}, Test acc: {IoU:.2f}\n")
 
     print("Training Complete!")
-    state_dict = model.state_dict()
-    save(state_dict, "/mnt/d/SAR_Water_v1.pth")
+    # state_dict = model.state_dict()
+    # save(state_dict, "/mnt/d/SAR_Water_v1.pth")
     print("Model Saved")
 
 if __name__ == '__main__':
@@ -80,9 +80,9 @@ if __name__ == '__main__':
 
     epochs = 10
     classes = 1
-    learning_rate = 1e-4
+    learning_rate = 1e-5
 
-    model = smp.UnetPlusPlus(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="imagenet").to(device)
+    model = smp.Linknet(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="advprop").to(device)
 
     try:
         train_model(

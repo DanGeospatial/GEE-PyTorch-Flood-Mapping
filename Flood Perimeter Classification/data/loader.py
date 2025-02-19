@@ -10,9 +10,9 @@ from .dataset import NPYDataset
 img_path = "/mnt/d/SAR_Cat/images/"
 mask_path = "/mnt/d/SAR_Cat/masks/"
 
-train_ratio = 0.60
-validation_ratio = 0.20
-test_ratio = 0.20
+train_ratio = 0.80
+validation_ratio = 0.10
+test_ratio = 0.10
 
 loader_args = dict(num_workers=os.cpu_count(), pin_memory=True)
 
@@ -50,7 +50,7 @@ valid_dataset = NPYDataset(img_path, mask_path, x_val)
 test_dataset = NPYDataset(img_path, mask_path, x_test)
 
 # load images in batch size dependent on VRAM
-batch_size = 3
+batch_size = 1
 
 # Make sure to shuffle train but NOT valid or test
 train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **loader_args)
