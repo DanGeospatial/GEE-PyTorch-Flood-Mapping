@@ -1,4 +1,6 @@
 """
+This needs updating and testing
+
 Copyright (C) 2025 Daniel Nelson
 
     This program is free software: you can redistribute it and/or modify

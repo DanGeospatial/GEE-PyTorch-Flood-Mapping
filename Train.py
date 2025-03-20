@@ -101,8 +101,7 @@ if __name__ == '__main__':
     learning_rate = 1e-5
     aux_pm = {'dropout': 0.1}
 
-    # 75-76 with LinkNet
-    #TODO I think large only water tiles are the problem & weird band information
+    #I think large only water tiles are the problem & unconventional band information
     model = smp.UnetPlusPlus(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="advprop",
                              aux_params=aux_pm).to(device)
 
