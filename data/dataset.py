@@ -36,21 +36,19 @@ class NPYDataset(Dataset):
 
         image = np.array(Image.open(self.img_path + 'tile_' + self.X[index] + '.png').convert("RGB"))
 
-        msk = Image.open(self.mask_path + 'tile_' + self.X[index] + '.png').convert("RGB")
-        red, green, blue = msk.split()
-        mask = np.array(green)
+        msk = Image.open(self.mask_path + 'tile_' + self.X[index] + '.png')
+        mask = np.array(msk)
         mask[mask > 254] = 1
         # Scale image values to 0-255 to make it easier for working with albumentations
         # image = ((image - image.min()) * (1/(image.max() - image.min()) * 255)).astype('uint8')
 
         if self.transform is not None:
-            aug = self.transform(image=image, mask=mask)
+            aug = self.transform(image=image)
             image = aug['image']
-            mask = aug['mask']
 
-        normalized = ab.Normalize()(image=image, mask=np.expand_dims(mask, 0))
+        normalized = ab.Normalize()(image=image)
         # normalized = ab.Normalize()(image=np.expand_dims(image, 2), mask=np.expand_dims(mask, 0)) for greyscale
 
         assert mask.max() <= 1.0 and mask.min() >= 0
 
-        return normalized["image"].transpose(2, 0, 1), normalized["mask"]
+        return normalized["image"].transpose(2, 0, 1), mask
