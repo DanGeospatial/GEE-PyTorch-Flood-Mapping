@@ -45,7 +45,7 @@ def train_model(model, device_hw, epoch_num, lr):
 
             with autocast(device_hw.type):
                 mask_prediction = model(images)
-                loss = loss_fn(mask_prediction, masks.float())
+                loss = loss_fn(mask_prediction, masks)
 
 
             gradient_scaler.scale(loss).backward()
@@ -98,12 +98,10 @@ if __name__ == '__main__':
 
     epochs = 10
     classes = 1
-    learning_rate = 1e-5
-    aux_pm = {'dropout': 0.1}
+    learning_rate = 4e-5
 
     #I think large only water tiles are the problem & unconventional band information
-    model = smp.UnetPlusPlus(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="advprop",
-                             aux_params=aux_pm).to(device)
+    model = smp.UnetPlusPlus(encoder_name="efficientnet-b2", in_channels=3, classes=classes, encoder_weights="advprop").to(device)
 
     try:
         train_model(
