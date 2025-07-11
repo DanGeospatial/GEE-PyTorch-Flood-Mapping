@@ -11,7 +11,7 @@ def train_model(model, device_hw, epoch_num, weight_decay, lr):
     # Set the optimizer and learning rate scheduler
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
-    loss_fn = CrossEntropyLoss()
+    loss_fn = CrossEntropyLoss() #cross-entropy loss function is used to find the optimal solution by adjusting the weights
     gradient_scaler = torch.amp.GradScaler()
 
     # begin training
@@ -32,10 +32,9 @@ def train_model(model, device_hw, epoch_num, weight_decay, lr):
                 mask_prediction = model(images)
                 loss = loss_fn(mask_prediction, masks)
 
-
             optimizer.zero_grad()
             gradient_scaler.scale(loss).backward()
-            gradient_scaler.step(optimizer)
+            gradient_scaler.step(optimizer) # iterate over all parameters it is supposed to update
             gradient_scaler.update()
             epoch_loss += loss.item()
 

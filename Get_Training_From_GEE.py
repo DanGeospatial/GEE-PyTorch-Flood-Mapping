@@ -27,7 +27,6 @@ import requests
 import shutil
 from retry import retry
 
-
 # Initialize Earth Engine Api
 # More information at developers.google.com/earth-engine/guides/python_install-conda#windows
 ee.Initialize(project='ee-nelson-remote-sensing', url="https://earthengine-highvolume.googleapis.com")
@@ -44,6 +43,7 @@ def getRequests(image: ee.Image, params: dict, region: ee.Geometry):
     )
 
     return points.aggregate_array(".geo").getInfo()
+
 
 @retry(tries=10, delay=1, backoff=2)
 def getResult(index, point):
@@ -111,54 +111,52 @@ def getResult(index, point):
 
 
 def filter_sentinel1(lbl: ee.Image, start: str, end: str):
-
     # Retrieve SAR data under mask
     global mask
     mask = lbl
     geomimg = lbl.geometry()
 
     parameter_vv = {'START_DATE': start,
-                 'STOP_DATE': end,
-                 'POLARIZATION': 'VV',
-                 'ORBIT': 'DESCENDING',
-                 'ROI': geomimg,
-                 'APPLY_BORDER_NOISE_CORRECTION': False,
-                 'APPLY_SPECKLE_FILTERING': True,
-                 'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
-                 'SPECKLE_FILTER': 'GAMMA MAP',
-                 'SPECKLE_FILTER_KERNEL_SIZE': 9,
-                 'SPECKLE_FILTER_NR_OF_IMAGES': 10,
-                 'APPLY_TERRAIN_FLATTENING': True,
-                 'DEM': ee.Image('USGS/SRTMGL1_003'),
-                 'TERRAIN_FLATTENING_MODEL': 'VOLUME',
-                 'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
-                 'FORMAT': 'DB',
-                 'CLIP_TO_ROI': False,
-                 'SAVE_ASSET': False,
-                 'ASSET_ID': "users/XXX"
-                 }
+                    'STOP_DATE': end,
+                    'POLARIZATION': 'VV',
+                    'ORBIT': 'DESCENDING',
+                    'ROI': geomimg,
+                    'APPLY_BORDER_NOISE_CORRECTION': False,
+                    'APPLY_SPECKLE_FILTERING': True,
+                    'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
+                    'SPECKLE_FILTER': 'GAMMA MAP',
+                    'SPECKLE_FILTER_KERNEL_SIZE': 9,
+                    'SPECKLE_FILTER_NR_OF_IMAGES': 10,
+                    'APPLY_TERRAIN_FLATTENING': True,
+                    'DEM': ee.Image('USGS/SRTMGL1_003'),
+                    'TERRAIN_FLATTENING_MODEL': 'VOLUME',
+                    'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
+                    'FORMAT': 'DB',
+                    'CLIP_TO_ROI': False,
+                    'SAVE_ASSET': False,
+                    'ASSET_ID': "users/XXX"
+                    }
 
     parameter_vh = {'START_DATE': start,
-                 'STOP_DATE': end,
-                 'POLARIZATION': 'VH',
-                 'ORBIT': 'DESCENDING',
-                 'ROI': geomimg,
-                 'APPLY_BORDER_NOISE_CORRECTION': False,
-                 'APPLY_SPECKLE_FILTERING': True,
-                 'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
-                 'SPECKLE_FILTER': 'GAMMA MAP',
-                 'SPECKLE_FILTER_KERNEL_SIZE': 9,
-                 'SPECKLE_FILTER_NR_OF_IMAGES': 10,
-                 'APPLY_TERRAIN_FLATTENING': True,
-                 'DEM': ee.Image('USGS/SRTMGL1_003'),
-                 'TERRAIN_FLATTENING_MODEL': 'VOLUME',
-                 'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
-                 'FORMAT': 'DB',
-                 'CLIP_TO_ROI': False,
-                 'SAVE_ASSET': False,
-                 'ASSET_ID': "users/XXX"
-                 }
-
+                    'STOP_DATE': end,
+                    'POLARIZATION': 'VH',
+                    'ORBIT': 'DESCENDING',
+                    'ROI': geomimg,
+                    'APPLY_BORDER_NOISE_CORRECTION': False,
+                    'APPLY_SPECKLE_FILTERING': True,
+                    'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
+                    'SPECKLE_FILTER': 'GAMMA MAP',
+                    'SPECKLE_FILTER_KERNEL_SIZE': 9,
+                    'SPECKLE_FILTER_NR_OF_IMAGES': 10,
+                    'APPLY_TERRAIN_FLATTENING': True,
+                    'DEM': ee.Image('USGS/SRTMGL1_003'),
+                    'TERRAIN_FLATTENING_MODEL': 'VOLUME',
+                    'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
+                    'FORMAT': 'DB',
+                    'CLIP_TO_ROI': False,
+                    'SAVE_ASSET': False,
+                    'ASSET_ID': "users/XXX"
+                    }
 
     filter_vv = wp.s1_preproc(parameter_vv)
     filter_vh = wp.s1_preproc(parameter_vh)
@@ -211,52 +209,50 @@ def filter_sentinel1(lbl: ee.Image, start: str, end: str):
 
 
 def inference_sentinel1(lbl: ee.FeatureCollection, start: str, end: str, out_name: str):
-
     # Retrieve SAR data under mask
     geomimg = lbl.geometry()
 
     parameter_vv = {'START_DATE': start,
-                 'STOP_DATE': end,
-                 'POLARIZATION': 'VV',
-                 'ORBIT': 'ASCENDING',
-                 'ROI': geomimg,
-                 'APPLY_BORDER_NOISE_CORRECTION': False,
-                 'APPLY_SPECKLE_FILTERING': True,
-                 'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
-                 'SPECKLE_FILTER': 'GAMMA MAP',
-                 'SPECKLE_FILTER_KERNEL_SIZE': 9,
-                 'SPECKLE_FILTER_NR_OF_IMAGES': 10,
-                 'APPLY_TERRAIN_FLATTENING': True,
-                 'DEM': ee.Image('USGS/SRTMGL1_003'),
-                 'TERRAIN_FLATTENING_MODEL': 'VOLUME',
-                 'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
-                 'FORMAT': 'DB',
-                 'CLIP_TO_ROI': False,
-                 'SAVE_ASSET': False,
-                 'ASSET_ID': "users/XXX"
-                 }
+                    'STOP_DATE': end,
+                    'POLARIZATION': 'VV',
+                    'ORBIT': 'ASCENDING',
+                    'ROI': geomimg,
+                    'APPLY_BORDER_NOISE_CORRECTION': False,
+                    'APPLY_SPECKLE_FILTERING': True,
+                    'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
+                    'SPECKLE_FILTER': 'GAMMA MAP',
+                    'SPECKLE_FILTER_KERNEL_SIZE': 9,
+                    'SPECKLE_FILTER_NR_OF_IMAGES': 10,
+                    'APPLY_TERRAIN_FLATTENING': True,
+                    'DEM': ee.Image('USGS/SRTMGL1_003'),
+                    'TERRAIN_FLATTENING_MODEL': 'VOLUME',
+                    'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
+                    'FORMAT': 'DB',
+                    'CLIP_TO_ROI': False,
+                    'SAVE_ASSET': False,
+                    'ASSET_ID': "users/XXX"
+                    }
 
     parameter_vh = {'START_DATE': start,
-                 'STOP_DATE': end,
-                 'POLARIZATION': 'VH',
-                 'ORBIT': 'ASCENDING',
-                 'ROI': geomimg,
-                 'APPLY_BORDER_NOISE_CORRECTION': False,
-                 'APPLY_SPECKLE_FILTERING': True,
-                 'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
-                 'SPECKLE_FILTER': 'GAMMA MAP',
-                 'SPECKLE_FILTER_KERNEL_SIZE': 9,
-                 'SPECKLE_FILTER_NR_OF_IMAGES': 10,
-                 'APPLY_TERRAIN_FLATTENING': True,
-                 'DEM': ee.Image('USGS/SRTMGL1_003'),
-                 'TERRAIN_FLATTENING_MODEL': 'VOLUME',
-                 'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
-                 'FORMAT': 'DB',
-                 'CLIP_TO_ROI': False,
-                 'SAVE_ASSET': False,
-                 'ASSET_ID': "users/XXX"
-                 }
-
+                    'STOP_DATE': end,
+                    'POLARIZATION': 'VH',
+                    'ORBIT': 'ASCENDING',
+                    'ROI': geomimg,
+                    'APPLY_BORDER_NOISE_CORRECTION': False,
+                    'APPLY_SPECKLE_FILTERING': True,
+                    'SPECKLE_FILTER_FRAMEWORK': 'MULTI',
+                    'SPECKLE_FILTER': 'GAMMA MAP',
+                    'SPECKLE_FILTER_KERNEL_SIZE': 9,
+                    'SPECKLE_FILTER_NR_OF_IMAGES': 10,
+                    'APPLY_TERRAIN_FLATTENING': True,
+                    'DEM': ee.Image('USGS/SRTMGL1_003'),
+                    'TERRAIN_FLATTENING_MODEL': 'VOLUME',
+                    'TERRAIN_FLATTENING_ADDITIONAL_LAYOVER_SHADOW_BUFFER': 0,
+                    'FORMAT': 'DB',
+                    'CLIP_TO_ROI': False,
+                    'SAVE_ASSET': False,
+                    'ASSET_ID': "users/XXX"
+                    }
 
     filter_vv = wp.s1_preproc(parameter_vv)
     filter_vh = wp.s1_preproc(parameter_vh)
@@ -281,16 +277,16 @@ def inference_sentinel1(lbl: ee.FeatureCollection, start: str, end: str, out_nam
         }
     )
 
-    vv_min = img_vv.select(['VV']).reduceRegion(reducer= ee.Reducer.min(), geometry=geomimg, scale=100)
-    vv_max= img_vv.select(['VV']).reduceRegion(reducer= ee.Reducer.max(), geometry=geomimg, scale=100)
+    vv_min = img_vv.select(['VV']).reduceRegion(reducer=ee.Reducer.min(), geometry=geomimg, scale=100)
+    vv_max = img_vv.select(['VV']).reduceRegion(reducer=ee.Reducer.max(), geometry=geomimg, scale=100)
     vv_norm = img_vv.select(['VV']).unitScale(low=vv_min.get('VV'), high=vv_max.get('VV'))
 
     vh_min = img_vh.select(['VH']).reduceRegion(reducer=ee.Reducer.min(), geometry=geomimg, scale=100)
     vh_max = img_vh.select(['VH']).reduceRegion(reducer=ee.Reducer.max(), geometry=geomimg, scale=100)
     vh_norm = img_vh.select(['VH']).unitScale(low=vh_min.get('VH'), high=vh_max.get('VH'))
 
-    avg_min = sq_avg.select(['VH']).reduceRegion(reducer= ee.Reducer.min(), geometry=geomimg, scale=100)
-    avg_max = sq_avg.select(['VH']).reduceRegion(reducer= ee.Reducer.max(), geometry=geomimg, scale=100)
+    avg_min = sq_avg.select(['VH']).reduceRegion(reducer=ee.Reducer.min(), geometry=geomimg, scale=100)
+    avg_max = sq_avg.select(['VH']).reduceRegion(reducer=ee.Reducer.max(), geometry=geomimg, scale=100)
     avg_norm = sq_avg.select(['VH']).unitScale(low=avg_min.get('VH'), high=avg_max.get('VH'))
 
     img_cat = ee.Image.cat([vv_norm, vh_norm, avg_norm])
@@ -319,7 +315,7 @@ if __name__ == '__main__':
         # Load in labels
         label = ee.Image("projects/ee-nelson-remote-sensing/assets/BC_Water")
         filter_sentinel1(lbl=label,
-                          start='2020-07-01', end='2020-08-25')
+                         start='2020-07-01', end='2020-08-25')
 
     if get_BC:
         label = ee.FeatureCollection('projects/ee-nelson-remote-sensing/assets/BCFlooding')
@@ -332,4 +328,3 @@ if __name__ == '__main__':
     if get_Oakville:
         label = ee.FeatureCollection('projects/ee-nelson-remote-sensing/assets/OakvilleFlooding')
         inference_sentinel1(lbl=label, start='2024-07-01', end='2024-07-28', out_name='SAR_OAK')
-
