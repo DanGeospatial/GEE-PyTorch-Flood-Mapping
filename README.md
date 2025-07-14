@@ -9,3 +9,4 @@ process satellite images and then create training tiles. The graphic above is an
 chips (top images) from Sentinel-1 C-Band SAR mosaics. Python is used to seamlessly integrate the code with PyTorch so that the 
 training data is automatically downloaded onto your computer to then be read onto your GPU. A training and inference workflow
 has been writen for PyTorch to demonstrate how to use these training tiles. 
+<img width="1629" height="1570" alt="image" src="https://github.com/user-attachments/assets/89f60a42-fc7a-40c8-9604-4a74bda583e2" />
