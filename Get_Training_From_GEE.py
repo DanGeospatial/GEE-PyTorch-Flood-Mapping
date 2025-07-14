@@ -31,7 +31,8 @@ from retry import retry
 # More information at developers.google.com/earth-engine/guides/python_install-conda#windows
 ee.Initialize(project='ee-nelson-remote-sensing', url="https://earthengine-highvolume.googleapis.com")
 
-
+# Inspired by https://notebooks.gishub.org/geemap/96_image_chips/ from Dr. Qiusheng Wu
+# Modified to work with SAR data and to export both images and masks
 def getRequests(image: ee.Image, params: dict, region: ee.Geometry):
     imger = ee.Image(1).rename("Class").addBands(image)
     points = imger.stratifiedSample(
