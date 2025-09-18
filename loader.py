@@ -25,8 +25,8 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from dataset import RGBDataset
 
-img_path = "/mnt/d/SAR_Cat/images/"
-mask_path = "/mnt/d/SAR_Cat/masks/"
+img_path = "/mnt/d/water/SAR_Cat/images/"
+mask_path = "/mnt/d/water/SAR_Cat/masks/"
 
 train_ratio = 0.70
 validation_ratio = 0.10
@@ -65,7 +65,7 @@ valid_dataset = RGBDataset(img_path, mask_path, x_val)
 test_dataset = RGBDataset(img_path, mask_path, x_test)
 
 # load images in batch size dependent on VRAM
-batch_size = 5
+batch_size = 6
 
 # Make sure to shuffle train but NOT valid or test
 train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **loader_args)

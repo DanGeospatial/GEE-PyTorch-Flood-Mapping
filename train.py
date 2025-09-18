@@ -25,13 +25,16 @@ from torchmetrics.classification import MulticlassAccuracy
 from torchgeo.models import FarSeg
 
 from loader import train_dl, test_dl
+from Models import UNet
 
 
 def train_model(model, device_hw, epoch_num, weight_decay, lr):
     # Set the optimizer and learning rate scheduler
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
-    loss_fn = CrossEntropyLoss() #cross-entropy loss function is used to find the optimal solution by adjusting the weights
+    w0, w1 = 1.0, 0.28
+    weight = torch.tensor([w0, w1], dtype=torch.float, device=device)
+    loss_fn = CrossEntropyLoss(weight=weight)
     gradient_scaler = torch.amp.GradScaler()
 
     # begin training
@@ -43,10 +46,6 @@ def train_model(model, device_hw, epoch_num, weight_decay, lr):
         for images, masks in train_dl:
             images = images.to(device=device_hw)
             masks = masks.to(device=device_hw)
-
-            # skip chips all water
-            if images.max() == 1 and images.min() == 1:
-                continue
 
             with autocast(device_hw.type):
                 mask_prediction = model(images)
@@ -86,7 +85,7 @@ def train_model(model, device_hw, epoch_num, weight_decay, lr):
 
     print("Training Complete!")
     state_dict = model.state_dict()
-    save(state_dict, "/mnt/d/SARFloodModel.pth")
+    save(state_dict, "/mnt/d/water/SARFloodModel_v2.pth")
     print("Model Saved")
 
 
@@ -99,11 +98,12 @@ if __name__ == '__main__':
 
     epochs = 5
     learning_rate = 0.0001
-    decay = 0.01
+    decay = 0.0001
     classes = 2
     bands = 3
 
-    model = FarSeg(backbone='resnet18', classes=classes, backbone_pretrained=True).to(device)
+    # model = FarSeg(backbone='resnet18', classes=classes, backbone_pretrained=True).to(device)
+    model = UNet(in_ch=bands, num_classes=classes).to(device)
 
     try:
         train_model(
